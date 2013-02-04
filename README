@@ -1,0 +1,5 @@
+This is a basic javascript dodge game where the objective is to avoid the moving squares while trying to score points in the flashing score areas.
+
+You have a health bar that decreases if you are touching one of moving squares. When you run out of healt your square explodes
+
+This is written in Javascript that updates a HTML canvas, it responds to mouse clicks around the screen to determin the direction you move in, this will be upgraded to screen taps as well
