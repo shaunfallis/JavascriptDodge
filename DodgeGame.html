@@ -1,0 +1,612 @@
+
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+<head>
+
+<script>
+
+//<link rel="stylesheet" href="http://code.jquery.com/mobile/1.0.1/jquery.mobile-1.0.1.min.css" />
+//<script src="http://code.jquery.com/jquery-1.7.1.min.js"></script>
+<script>
+//<script src="http://code.jquery.com/mobile/1.0.1/jquery.mobile-1.0.1.min.js"></script>
+
+
+    <script>
+window.requestAnimFrame = (function(callback){
+    return window.requestAnimationFrame ||
+    window.webkitRequestAnimationFrame ||
+    window.mozRequestAnimationFrame ||
+    window.oRequestAnimationFrame ||
+    window.msRequestAnimationFrame ||
+    function(callback){
+        window.setTimeout(callback, 1000 / 60);
+    };
+})();
+ 
+ var particleArray = [];
+ var score=0;
+ var date = new Date;
+ var startTime = date.getTime();
+ var scoreZoneLoop = 0;
+ var scoreZone = { 	x:0,
+					y:0,
+					width:0,
+					height:0,};
+ var gradientLoop = 0;
+
+ 
+function randomRange(min, max) { 
+	return  Math.random()*(max-min) + min; 
+}	
+ 
+ 
+function drawRect(myRectangle){
+    var canvas = document.getElementById("myCanvas");
+    var context = canvas.getContext("2d");
+    context.beginPath();
+    context.rect(myRectangle.x, myRectangle.y, myRectangle.width, myRectangle.height);
+ 
+    context.fillStyle = myRectangle.colour;
+    context.fill();
+    context.lineWidth = myRectangle.borderWidth;
+    context.strokeStyle = "black";
+    context.stroke();
+}
+
+function detectCollision(myRectangle)
+{
+	var playerX = myRectangle[0].x;
+	var playerY = myRectangle[0].y;
+	var playerWidth = myRectangle[0].width;
+	var playerHeight = myRectangle[0].height;
+	var con1 = myRectangle[1].x;
+	var con2 = myRectangle[1].x-10;
+	
+	for(var i=1;i<myRectangle.length;i++)
+	{
+		//if((playerX<=myRectangle[i].x&& playerX+10>=myRectangle[i].x)||(playerY<=myRectangle[i].y&& playerY+10>=myRectangle[i].y))
+		if((playerX<=(myRectangle[i].x+10)&& playerX>=(myRectangle[i].x-10))&&(playerY<=(myRectangle[i].y+10)&& playerY>=(myRectangle[i].y-10)))
+		{
+			var newHealth = myRectangle[0].health-1;
+			myRectangle[0].health = newHealth;
+		}
+	}
+	
+}
+ 
+function animate(lastTime, myRectangle, animProp){
+    //if (animProp.animate) {
+	
+        var canvas = document.getElementById("myCanvas");
+        var context = canvas.getContext("2d"); 
+        
+        var linearSpeed = 1;
+   
+   for(var k = 1; k<myRectangle.length;k++)
+   {
+       
+        var currentX = myRectangle[k].x;
+		var currentY = myRectangle[k].y;
+		var border = myRectangle[k].borderWidth;
+ 
+        if (currentX > canvas.width - myRectangle[k].width - border) 		
+		{
+            myRectangle[k].xSpeed = myRectangle[k].xSpeed*-1;
+        }
+		else if (currentX<0)
+		{
+			myRectangle[k].xSpeed = myRectangle[k].xSpeed*-1;
+		}
+		if(currentY > canvas.height - myRectangle[k].height - border)
+		{
+			myRectangle[k].ySpeed = myRectangle[k].ySpeed *-1;
+		}
+		else if(currentY<0)
+		{
+			myRectangle[k].ySpeed = myRectangle[k].ySpeed*-1;
+		}
+		var newX = currentX + myRectangle[k].xSpeed;
+		var newY = currentY + myRectangle[k].ySpeed;
+            myRectangle[k].x = newX;
+			myRectangle[k].y = newY;
+          
+    }      
+          
+        // clear
+        context.clearRect(0, 0, canvas.width, canvas.height);
+ 
+        // draw 
+		draw(myRectangle);
+		
+		
+ 
+        // request new frame
+        requestAnimFrame(function(){
+            animate(lastTime, myRectangle, animProp);
+        });
+    //}
+}
+
+function draw(myRectangle)
+{
+	detectCollision(myRectangle);
+	if(myRectangle[0].health>0)
+	{
+		setInterval(scoring(myRectangle[0]),30);
+	  	drawHealth(myRectangle);//[0].health);	
+    	var k =myRectangle.length;
+			for (var i=0;i<k;i++)
+			{
+        		drawRect(myRectangle[i]);
+			}
+	}	
+	else
+	{	
+		setInterval(explode(myRectangle),30);
+    	//gameOver();
+	}
+}
+
+
+var s= 0;
+function explode(myRectangle)
+{
+	var canvas = document.getElementById("myCanvas");
+    var context = canvas.getContext("2d");
+		
+	context.clearRect(0, 0, canvas.width, canvas.height);	
+	
+		context.beginPath();
+		var particle = { 	x : myRectangle[0].x, 
+							y : myRectangle[0].y, 
+							xSpeed : randomRange(-5, 5), 
+							ySpeed : randomRange(-5, 5),
+							size : 8 };
+		
+	  if( s<=15)
+	  {
+	  particleArray.push(particle); 
+	  }
+	  // clear the screen before the square is redrawn
+	  context.clearRect(0, 0, canvas.width, canvas.height);
+	  
+	  for(var i = 0; i<particleArray.length; i++) {
+	  
+		  particle = particleArray[i]; 
+		  
+		  context.fillStyle = myRectangle[0].colour; 
+		  
+		  context.fillRect(particle.x, particle.y, particle.size, particle.size);
+	  
+		  // add speed to x and y
+		  particle.x = particle.x + particle.xSpeed;
+		  particle.y = particle.y + particle.ySpeed; 
+				  
+		  // shrink the size of the particle as it gets further from the origion 
+		  particle.size = particle.size * 0.90;
+		  s++
+	  
+	}
+}
+function gameOver()
+{
+    var canvas = document.getElementById('myCanvas');
+    var context = canvas.getContext('2d');
+    
+    var message = "Game Over";
+    
+    context.clearRect(0, 0, canvas.width, canvas.height);
+    context.font = '40pt Calibri';
+    context.fillStyle = 'red';
+    context.fillText(message, 10, canvas.height/2);    
+}
+
+function scoring(myRectangle)
+{
+	var canvas = document.getElementById('myCanvas');
+    var context = canvas.getContext('2d');
+	var date2 = new Date();
+	var currentTime = date2.getTime();
+	
+	context.font = '10pt Calibri';
+    context.fillStyle = 'white';
+    context.fillText('Score: ' + score, 150, 20);
+	
+	if(scoreZoneLoop == 0|| (currentTime-startTime)/10000 >=scoreZoneLoop)
+	{
+		//set scorezone parameters
+		scoreZone.x = randomRange(0,canvas.width-50);
+		scoreZone.y = randomRange(0,canvas.height-50);
+		scoreZone.width = randomRange(20, 50);
+		scoreZone.height = randomRange(20, 50);
+		scoreZoneLoop++;	
+	}
+	
+	var grd=context.createLinearGradient(scoreZone.x, scoreZone.y, scoreZone.x+scoreZone.width, scoreZone.y+scoreZone.height);
+	
+	if(((currentTime-startTime)/1000)-gradientLoop>0.25)
+	{var colour1 = "white";
+	var colour2 = "black"
+	if(((currentTime-startTime)/1000)-gradientLoop>0.5)
+	gradientLoop+=0.5}
+	else
+	{var colour1 = "black";
+	var colour2 = "white"	}
+	
+	grd.addColorStop(0,colour1);
+	grd.addColorStop(0.3,colour2);
+	grd.addColorStop(0.5,colour1);
+	grd.addColorStop(0.7,colour2);
+	grd.addColorStop(1,colour1);
+	
+	
+	    
+    context.lineWidth = 1;
+	context.strokeStyle = grd;
+	context.rect(scoreZone.x, scoreZone.y, scoreZone.width, scoreZone.height);
+	context.stroke(); 		  
+		
+	//increase score if player is in scorezone		
+	if(myRectangle.x>=scoreZone.x && myRectangle.x<=(scoreZone.x+ scoreZone.width - myRectangle.width) && 
+	   myRectangle.y>=scoreZone.y && myRectangle.y<=(scoreZone.y+ scoreZone.height - myRectangle.height))
+	{
+		score++;	
+	}
+}
+
+
+function drawHealth(myRectangle)
+{
+	var canvas = document.getElementById("myCanvas");
+    var context = canvas.getContext("2d");
+	var context2 = canvas.getContext("2d");
+    context.beginPath();
+	context2.beginPath();
+	var health;	
+	var colour;
+	health = myRectangle[0].health;
+	
+	if(health == 100)
+	{		
+		green = 255;
+		red = 0;
+	}
+	else if(health < 100 && health >50)
+	{
+		green = 255;
+		red = (100-health)*5
+		
+	}
+	else if(health==50)
+	{
+		green = 255;
+		red = 255;
+	}
+	else 
+	{
+		green = (health*5)
+		red = 255;
+	}
+	
+	
+	
+	context.rect(10, 10,health, 10);
+	context.fillStyle = "rgb("+red+","+green+",0)";
+	context2.strokeStyle = "rgb("+red+","+green+",0)";
+    context.fill();
+	context.stroke();
+	
+    context2.rect(10, 10, 100, 10);    
+    context2.lineWidth = 2;
+    context2.strokeStyle = "black";
+	context2.stroke();
+    
+	//if(health>0)
+	//{	
+	//	var newHealth = myRectangle[0].health-1;
+	//	myRectangle[0].health = newHealth;
+	//}
+}
+
+function move(myRectangle, coorXMove, coorYMove)
+{
+   var canvas = document.getElementById("myCanvas");
+   var context = canvas.getContext("2d");
+
+   var currentX = myRectangle[0].x;
+   var currentY = myRectangle[0].y;
+   var recWidth = myRectangle[0].width;
+   var recBorder = myRectangle[0].borderWidth;
+   var recHeight = myRectangle[0].height;
+
+  //if moving right and is not at right edge
+   if(coorXMove>0 && currentX < canvas.width - recWidth - recBorder)
+	{
+    //if moving will not put it beyond the boundries of the screen
+    if((currentX+coorXMove)<canvas.width - recWidth - recBorder)     
+    {
+      myRectangle[0].x += coorXMove; //move
+      //if moving down and is not at bottom edge
+      if(coorYMove!=0 && currentY>0 && currentY<canvas.height - recHeight - recBorder)
+		  {
+			  myRectangle[0].y += coorYMove;
+		  }
+    }
+    else
+    { //move to the edge of the screen
+      myRectangle[0].x = (canvas.width - recWidth - recBorder);
+    }		
+	}
+   else if(coorXMove<0 && currentX >0)
+	{
+	  if((currentX+coorXMove)>0)
+	  {
+		  myRectangle[0].x += coorXMove;
+		  if(coorYMove!=0 && currentY>0 && currentY<canvas.height - recHeight - recBorder)
+		  {
+		   	myRectangle[0].y += coorYMove;
+		  }
+		}
+		else
+		{
+      myRectangle[0].x=0;
+		}
+	}
+  else if (coorYMove<0 && currentY >0)
+  {
+      if((currentY+coorYMove)>0)
+      {
+        myRectangle[0].y += coorYMove;
+      }
+      else
+      {
+        myRectangle[0].y = 0;
+      }
+	   
+  }
+  else if (coorYMove>0 && currentY < canvas.height - recHeight - recBorder)
+  {
+    if((currentY+coorYMove)< canvas.height - recHeight - recBorder)
+      {
+        myRectangle[0].y += coorYMove;
+      }
+      else
+      {
+        myRectangle[0].y =  canvas.height - recHeight - recBorder;
+      }
+  }
+   
+
+        // clear
+        context.clearRect(0, 0, canvas.width, canvas.height);
+ 
+        // draw
+		draw(myRectangle);
+		
+
+}
+
+function writeMessage(canvas, message){
+    var context = canvas.getContext('2d');
+    context.clearRect(0, 0, canvas.width, canvas.height);
+    context.font = '18pt Calibri';
+    context.fillStyle = 'black';
+    context.fillText(message, 10, 25);
+}
+ 
+function getMousePos(canvas, evt){
+    // get canvas position
+    var obj = canvas;
+    var top = 0;
+    var left = 0;
+    while (obj && obj.tagName != 'BODY') {
+        top += obj.offsetTop;
+        left += obj.offsetLeft;
+        obj = obj.offsetParent;
+    }
+ 
+    // return relative mouse position
+    var mouseX = evt.clientX - left + window.pageXOffset;
+    var mouseY = evt.clientY - top + window.pageYOffset;
+    return {
+        x: mouseX,
+        y: mouseY
+    };
+}
+ 
+window.onload = function(){
+	
+
+    var canvas = document.getElementById('myCanvas');
+    var context = canvas.getContext('2d');
+    
+	
+	canvas.style.backgroundColor = "#242424";
+	
+	var recWidth = 10;
+	var recHeight = 10;
+
+	var myRectangle = new Array();
+
+    myRectangle[0] = {
+        x: (canvas.width/2) - (recWidth/2),
+        y: (canvas.height/2) - (recHeight/2),
+        width: recWidth,
+        height: recHeight,
+		colour:'yellow',
+        borderWidth: 1,
+		xSpeed:0,
+		ySpeed:0,
+		health:100
+    };
+
+    myRectangle[1] = {
+        x: 20,
+        y: 50,
+        width: recWidth,
+        height: recHeight,
+		colour:'black',
+        borderWidth: 1,
+		xSpeed:randomRange(-4,4),
+		ySpeed:randomRange(-4,4),
+		health:0
+    };
+    
+    myRectangle[2] = {
+        x: 80,
+        y: 50,
+        width: recWidth,
+        height: recHeight,
+		colour:'green',
+        borderWidth: 1,
+		xSpeed:randomRange(-4,4),
+		ySpeed:randomRange(-4,4),
+		health:0
+    };
+    
+    myRectangle[3] = {
+        x: 200,
+        y: 50,
+        width: recWidth,
+        height: recHeight,
+		colour:'blue',
+        borderWidth: 1,
+		xSpeed:randomRange(-4,4),
+		ySpeed:randomRange(-4,4),
+		health:0
+    };
+    
+    myRectangle[4] = {
+        x: 80,
+        y: 100,
+        width: recWidth,
+        height: recHeight,
+		colour:'red',
+        borderWidth: 1,
+		xSpeed:randomRange(-4,4),
+		ySpeed:randomRange(-4,4),
+		health:0
+    };
+	myRectangle[5] = {
+        x: 0,
+        y: 0,
+        width: 0,
+        height: 0,
+		colour:'red',
+        borderWidth: 0,
+		xSpeed:0,
+		ySpeed:0,
+		health:0
+    };
+
+
+
+
+
+    
+ 
+   /* canvas.addEventListener('mousemove', function(evt){
+        var mousePos = getMousePos(canvas, evt);
+        var message = "Mouse position: " + mousePos.x + "," + mousePos.y;
+        writeMessage(canvas, message);
+    }, false);
+ 
+    /*
+     * make the animation properties an object
+     * so that it can be modified by reference
+     * from an event
+     */
+    var animProp = {
+        animate: false
+    };
+ 
+    // add click listener to canvas
+    document.getElementById("myCanvas").addEventListener("click", function(evt){
+	var mousePos = getMousePos(canvas, evt);
+
+	if(mousePos.x > canvas.width-(canvas.width/3))
+	{
+		if (mousePos.y <canvas.height/3)
+		{
+			move(myRectangle,10,-10)
+		}
+		else if(mousePos.y >canvas.height-(canvas.height/3))
+		{
+			move(myRectangle,10,10)
+		}
+		else
+		{
+			move(myRectangle,10,0)
+		}
+	}	
+	else if(mousePos.x < canvas.width/3)
+	{
+		if (mousePos.y <canvas.height/3)
+		{
+			move(myRectangle,-10,-10)
+		}
+		else if(mousePos.y >canvas.height-(canvas.height/3))
+		{
+			move(myRectangle,-10,10)
+		}
+		else
+		{
+			move(myRectangle,-10,0)
+		}
+	}
+	else if(mousePos.y > canvas.height/3)
+	{
+		move(myRectangle,0,10)
+	}
+	else if(mousePos.y < canvas.height-(canvas.height/3))
+	{
+		move(myRectangle,0,-10)
+        }
+
+      /*  if (animProp.animate) {
+            animProp.animate = false;
+        }
+        else {*/
+		if (!animProp.animate) {
+            animProp.animate = true;
+            var date = new Date();
+            var time = date.getTime();
+			startTime = time;
+            animate(time, myRectangle, animProp);
+		}
+       // }
+    });
+ 
+ 		draw(myRectangle);
+		
+};
+
+    </script>
+</head>
+<body>
+<script>
+/*
+    <div id="StartMenu" data-role="page">
+    
+    <div id="title">
+    <p>Avoid game<p>
+    </div>
+    <div id="buttonDiv" >
+      <div>
+        <a href="#game" data-role="button" data-inline="true" data-transition="pop">start</a>
+      </div>
+      <div>
+        <a data-role="button" data-inline="true">High Scores</a>
+      </div>
+      <div>
+        <a data-role="button" data-inline="true">Options</a>
+      </div>
+    </div>
+    </div>*/
+   </script> 
+    
+    <div id="game" data-role="page">
+      <div id="container">
+        <canvas id="myCanvas"></canvas>
+      </div>
+    </div>
+</body>
